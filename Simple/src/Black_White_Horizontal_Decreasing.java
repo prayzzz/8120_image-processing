@@ -1,5 +1,5 @@
-import ij.IJ;
 import ij.ImagePlus;
+import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
@@ -11,35 +11,43 @@ public class Black_White_Horizontal_Decreasing implements PlugIn
 {
     public void run(String arg)
     {
-        long start = System.currentTimeMillis();
+        GenericDialog gd = new GenericDialog("Black White Horizontal Decreasing");
+        gd.addNumericField("Start Height", 33, 0);
+        gd.showDialog();
+        if (gd.wasCanceled())
+        {
+            return;
+        }
+
         int w = 400, h = 400;
         ImageProcessor ip = new ColorProcessor(w, h);
         int[] pixels = (int[]) ip.getPixels();
 
-        int targetWidth = 1;
-        int currentWidth = 1;
+        int currentHeight = (int) gd.getNextNumber();
+        int doneHeight = 0;
         int color = 0;
 
-        int i = (w * h) - 1;
+        int i = 0;
         for (int y = 0; y < h; y++)
         {
             for (int x = 0; x < w; x++)
             {
-                pixels[i--] = color;
+                pixels[i++] = (byte) color;
             }
 
-            currentWidth--;
-
-            if (currentWidth == 0)
+            if (y == doneHeight + currentHeight)
             {
-                targetWidth++;
-                currentWidth = targetWidth;
+                color = 255 - color;
+                doneHeight += currentHeight;
+                currentHeight--;
 
-                color = color == 0 ? (255 << 16) + (255 << 8) + 255 : 0;
+                if (currentHeight < 1)
+                {
+                    currentHeight = 1;
+                }
             }
         }
 
         new ImagePlus("Black White Horizontal Decreasing", ip).show();
-        IJ.showStatus("" + (System.currentTimeMillis() - start));
     }
 }

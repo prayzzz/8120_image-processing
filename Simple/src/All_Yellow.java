@@ -1,18 +1,15 @@
-import ij.IJ;
 import ij.ImagePlus;
 import ij.plugin.PlugIn;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
 /**
- * This a prototype ImageJ plugin.
+ * Created by prayzzz on 02.05.2015.
  */
 public class All_Yellow implements PlugIn
 {
-
     public void run(String arg)
     {
-        long start = System.currentTimeMillis();
         int w = 400, h = 400;
         ImageProcessor ip = new ColorProcessor(w, h);
         int[] pixels = (int[]) ip.getPixels();
@@ -22,12 +19,11 @@ public class All_Yellow implements PlugIn
         {
             for (int x = 0; x < w; x++)
             {
-                pixels[i++] = (255 << 16) + (255 << 8) + (0 & 0xff);
+                pixels[i++] = (255 << 16) + (255 << 8);
             }
         }
 
         new ImagePlus("All Yellow!", ip).show();
-        IJ.showStatus("" + (System.currentTimeMillis() - start));
     }
 
 }

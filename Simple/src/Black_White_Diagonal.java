@@ -1,5 +1,5 @@
-import ij.IJ;
 import ij.ImagePlus;
+import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
@@ -11,26 +11,33 @@ public class Black_White_Diagonal implements PlugIn
 {
     public void run(String arg)
     {
-        long start = System.currentTimeMillis();
+        GenericDialog gd = new GenericDialog("Black White Diagonal");
+        gd.addNumericField("Line Width", 33, 0);
+        gd.showDialog();
+        if (gd.wasCanceled())
+        {
+            return;
+        }
+
         int w = 400, h = 400;
         ImageProcessor ip = new ColorProcessor(w, h);
         int[] pixels = (int[]) ip.getPixels();
+
+        int lineWidth = (int) gd.getNextNumber();
 
         int i = 0;
         for (int y = 0; y < h; y++)
         {
             for (int x = 0; x < w; x++)
             {
-                Point p = rotateInverse(new Point(x, y));
-                int c = Math.floorDiv(p.Y, 20) % 2;
-                int color = c == 0 ? 0 : (255 << 16) + (255 << 8) + 255;
+                Point currentPoint = rotateInverse(new Point(x, y));
+                int color = Math.floorDiv(currentPoint.Y, lineWidth) % 2 == 0 ? 0 : (255 << 16) + (255 << 8) + 255;
 
                 pixels[i++] = color;
             }
         }
 
         new ImagePlus("Black White Diagonal", ip).show();
-        IJ.showStatus("" + (System.currentTimeMillis() - start));
     }
 
     private Point rotateInverse(Point point)
