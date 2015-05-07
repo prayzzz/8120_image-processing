@@ -25,6 +25,5 @@ public class All_Yellow implements PlugIn
 
         new ImagePlus("All Yellow!", ip).show();
     }
-
 }
 
