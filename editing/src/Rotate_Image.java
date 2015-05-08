@@ -4,21 +4,19 @@ import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
 
 /**
- * Created by Patrick on 07.05.2015.
+ * Created by prayzzz on 07.05.2015.
  */
 public class Rotate_Image implements PlugInFilter
 {
-    @Override
     public int setup(String s, ImagePlus imagePlus)
     {
-        return DOES_ALL;
+        return DOES_8G;
     }
 
-    @Override
     public void run(ImageProcessor ip)
     {
         GenericDialog gd = new GenericDialog("Rotate Image");
-        gd.addNumericField("Rotation", 33, 0);
+        gd.addNumericField("Rotation", 2, 0);
         gd.showDialog();
         if (gd.wasCanceled())
         {

@@ -5,7 +5,7 @@ import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
 /**
- * Created by Patrick on 06.05.2015.
+ * Created by prayzzz on 06.05.2015.
  */
 public class Growing_Circles implements PlugIn
 {    public void run(String arg)

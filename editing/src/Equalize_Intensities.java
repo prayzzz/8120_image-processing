@@ -3,17 +3,15 @@ import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
 
 /**
- * Created by Patrick on 07.05.2015.
+ * Created by prayzzz on 07.05.2015.
  */
 public class Equalize_Intensities implements PlugInFilter
 {
-    @Override
     public int setup(String s, ImagePlus imagePlus)
     {
         return DOES_ALL;
     }
 
-    @Override
     public void run(ImageProcessor ip)
     {
         int h = ip.getHeight();
