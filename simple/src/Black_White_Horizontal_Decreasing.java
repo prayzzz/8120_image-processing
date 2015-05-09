@@ -1,6 +1,7 @@
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
+import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
@@ -20,24 +21,24 @@ public class Black_White_Horizontal_Decreasing implements PlugIn
         }
 
         int w = 400, h = 400;
-        ImageProcessor ip = new ColorProcessor(w, h);
-        int[] pixels = (int[]) ip.getPixels();
+        ImageProcessor ip = new ByteProcessor(w, h);
+        byte[] pixels = (byte[]) ip.getPixels();
 
         int currentHeight = (int) gd.getNextNumber();
         int doneHeight = 0;
-        int color = 0;
+        int intensity = 0;
 
         int i = 0;
         for (int y = 0; y < h; y++)
         {
             for (int x = 0; x < w; x++)
             {
-                pixels[i++] = (byte) color;
+                pixels[i++] = (byte) intensity;
             }
 
             if (y == doneHeight + currentHeight)
             {
-                color = 255 - color;
+                intensity = 255 - intensity;
                 doneHeight += currentHeight;
                 currentHeight--;
 

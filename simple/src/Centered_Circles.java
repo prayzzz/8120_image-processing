@@ -2,6 +2,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
+import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
@@ -22,8 +23,8 @@ public class Centered_Circles implements PlugIn
 
         long start = System.currentTimeMillis();
         int w = 400, h = 400;
-        ImageProcessor ip = new ColorProcessor(w, h);
-        int[] pixels = (int[]) ip.getPixels();
+        ImageProcessor ip = new ByteProcessor(w, h);
+        byte[] pixels = (byte[]) ip.getPixels();
         int i = 0;
 
         int circleWidth = (int) gd.getNextNumber();

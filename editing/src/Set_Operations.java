@@ -41,8 +41,8 @@ public class Set_Operations implements PlugInFilter
 
         GenericDialog gd = new GenericDialog("Set Operations");
         gd.addChoice("Image 1", choices.toArray(new String[choices.size()]), choices.get(0));
-        gd.addChoice("Image 2", choices.toArray(new String[choices.size()]), choices.get(0));
         gd.addChoice("Operation", getNames(Operators.class), choices.get(0));
+        gd.addChoice("Image 2", choices.toArray(new String[choices.size()]), choices.get(0));
         gd.showDialog();
 
         if (gd.wasCanceled())
@@ -51,8 +51,8 @@ public class Set_Operations implements PlugInFilter
         }
 
         ImagePlus image1 = WindowManager.getImage(gd.getNextChoice());
-        ImagePlus image2 = WindowManager.getImage(gd.getNextChoice());
         String operator = gd.getNextChoice();
+        ImagePlus image2 = WindowManager.getImage(gd.getNextChoice());
 
         ImagePlus result = null;
         switch (Operators.valueOf(operator))

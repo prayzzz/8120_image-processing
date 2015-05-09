@@ -1,6 +1,7 @@
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
+import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
@@ -20,8 +21,8 @@ public class Black_White_Diagonal implements PlugIn
         }
 
         int w = 400, h = 400;
-        ImageProcessor ip = new ColorProcessor(w, h);
-        int[] pixels = (int[]) ip.getPixels();
+        ImageProcessor ip = new ByteProcessor(w, h);
+        byte[] pixels = (byte[]) ip.getPixels();
 
         int lineWidth = (int) gd.getNextNumber();
 
@@ -31,9 +32,9 @@ public class Black_White_Diagonal implements PlugIn
             for (int x = 0; x < w; x++)
             {
                 Point currentPoint = rotateInverse(new Point(x, y));
-                int color = Math.floorDiv(currentPoint.Y, lineWidth) % 2 == 0 ? 0 : (255 << 16) + (255 << 8) + 255;
+                int intensity = Math.floorDiv(currentPoint.Y, lineWidth) % 2 == 0 ? 0 : 255;
 
-                pixels[i++] = color;
+                pixels[i++] = (byte) intensity;
             }
         }
 

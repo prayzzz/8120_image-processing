@@ -1,6 +1,7 @@
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
+import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
@@ -19,12 +20,12 @@ public class Growing_Circles implements PlugIn
         }
 
         int w = 400, h = 400;
-        ImageProcessor ip = new ColorProcessor(w, h);
-        int[] pixels = (int[]) ip.getPixels();
+        ImageProcessor ip = new ByteProcessor(w, h);
+        byte[] pixels = (byte[]) ip.getPixels();
 
         int circleWidth = (int) gd.getNextNumber();
         int lastRadius = 0;
-        int color = 255;
+        int intensity = 255;
 
         circles:
         while (true)
@@ -39,7 +40,7 @@ public class Growing_Circles implements PlugIn
                     if (r <= circleWidth + lastRadius && r > lastRadius)
                     {
                         int i = (y * w) + x;
-                        pixels[i] = (byte) color;
+                        pixels[i] = (byte) intensity;
 
                         if (x == (w - 1) && y == (h - 1))
                         {
@@ -49,7 +50,7 @@ public class Growing_Circles implements PlugIn
                 }
             }
 
-            color = 255 - color;
+            intensity = 255 - intensity;
             lastRadius += circleWidth;
             circleWidth -= 1;
 
