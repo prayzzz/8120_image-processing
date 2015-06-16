@@ -4,6 +4,8 @@ import ij.plugin.filter.RankFilters;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
+import java.awt.*;
+
 /**
  * Created by Patrick on 16.06.2015.
  */
@@ -25,5 +27,10 @@ public class Line_Detection2 implements PlugInFilter
         rankFilter.rank(medianImageProcessor, 5.0, 4);
 
         medianImage.show();
+    }
+
+    private Color getMedian(ImageProcessor ip)
+    {
+        return new Color(40, 84, 57);
     }
 }
