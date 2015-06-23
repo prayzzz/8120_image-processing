@@ -7,8 +7,10 @@ import ij.gui.Line;
 import ij.gui.Overlay;
 import ij.measure.Measurements;
 import ij.plugin.ChannelSplitter;
+import ij.plugin.filter.Binary;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.filter.RankFilters;
+import ij.process.BinaryProcessor;
 import ij.process.ImageProcessor;
 
 import javax.swing.*;
@@ -18,27 +20,31 @@ import java.util.ArrayList;
 /**
  * Created by Patrick on 16.06.2015.
  */
-public class Line_Detection2 implements PlugInFilter {
+public class Line_Detection2 implements PlugInFilter
+{
     private int ScanLineSpacing = 10;
     private int playGroundHeightPercent = 50;
     private final int MaxColorDistance = 30;
     private final int BrightDistance = 50;
 
     @Override
-    public int setup(String s, ImagePlus imagePlus) {
+    public int setup(String s, ImagePlus imagePlus)
+    {
         return DOES_ALL;
     }
 
     @Override
-    public void run(ImageProcessor sourceImageProcessor) {
+    public void run(ImageProcessor sourceImageProcessor)
+    {
         GenericDialog gd = new GenericDialog("Line Detection Settings");
         gd.addCheckbox("Median Filter", true);
         gd.addCheckbox("Maximum Filter", true);
         gd.addNumericField("Scanline Distance", 10.0, 0);
-        gd.addCheckbox("Skeleton", true);
+        gd.addCheckbox("Use Field Detection", true);
         gd.addNumericField("Estimated Playground Height %", 50.0, 0);
         gd.showDialog();
-        if (gd.wasCanceled()) {
+        if (gd.wasCanceled())
+        {
             return;
         }
 
@@ -47,7 +53,7 @@ public class Line_Detection2 implements PlugInFilter {
 
         ScanLineSpacing = (int) Math.round(gd.getNextNumber());
 
-        boolean skeleton = gd.getNextBoolean();
+        boolean fieldDetction = gd.getNextBoolean();
 
         playGroundHeightPercent = (int) Math.round(gd.getNextNumber());
 
@@ -56,18 +62,47 @@ public class Line_Detection2 implements PlugInFilter {
         ImageProcessor medianImageProcessor = medianImage.getProcessor();
 
         RankFilters rankFilter = new RankFilters();
-        if (maximum) {
+        if (maximum)
+        {
             rankFilter.rank(medianImageProcessor, 2.0, 2);
         }
 
-        if (median) {
+        if (median)
+        {
             rankFilter.rank(medianImageProcessor, 5.0, 4);
         }
 
-        ArrayList<Line> foundLines = new ArrayList<>();
+        ArrayList<Line> foundLines = nonMaskedLineDetection(sourceImageProcessor, ChannelSplitter.split(medianImage)[1], medianImageProcessor, rankFilter);
+        ArrayList<Line> filteredLines = new ArrayList<>();
+        if (fieldDetction)
+        {
+            ImagePlus mask = new Field_Detection().detectField(sourceImageProcessor);
+            ImageProcessor maskProcessor = mask.getProcessor();
 
-        if (skeleton) {
-            foundLines = nonMaskedLineDetection(sourceImageProcessor, ChannelSplitter.split(medianImage)[1], medianImageProcessor, rankFilter);
+            Binary binaryPlugin = new Binary();
+            binaryPlugin.setup("fill", null);
+            binaryPlugin.run(maskProcessor);
+
+            binaryPlugin.setup("close", null);
+            binaryPlugin.run(maskProcessor);
+
+            mask.show();
+
+            for (Line line : foundLines)
+            {
+                IJ.log(Integer.toString(maskProcessor.getPixel(line.x1, line.y1)));
+                if(maskProcessor.getPixel(line.x1, line.y1) == 0 || maskProcessor.getPixel(line.x2, line.y2) == 0 || line.getLength() < 3.0)
+                {
+                    continue;
+                }
+
+                filteredLines.add(line);
+            }
+
+        }
+        else
+        {
+            filteredLines = foundLines;
         }
 
         long end = System.currentTimeMillis();
@@ -76,7 +111,8 @@ public class Line_Detection2 implements PlugInFilter {
         IJ.log("Found Lines:");
         ImagePlus lineImage = new ImagePlus("Lines", sourceImageProcessor.convertToColorProcessor());
         ImageProcessor lineImageProcessor = lineImage.getProcessor();
-        for (Line l : foundLines) {
+        for (Line l : filteredLines)
+        {
             lineImageProcessor.setColor(Color.RED);
             lineImageProcessor.drawLine(l.x1, l.y1, l.x2, l.y2);
         }
@@ -84,7 +120,13 @@ public class Line_Detection2 implements PlugInFilter {
         lineImage.show();
     }
 
-    private ArrayList<Line> nonMaskedLineDetection(ImageProcessor sourceImageProcessor, ImagePlus imagePlus, ImageProcessor medianImageProcessor, RankFilters rankFilter) {
+    private ArrayList<Line> maskedLineDetection(ImageProcessor sourceImageProcessor, ImageProcessor medianImageProcessor)
+    {
+        return null;
+    }
+
+    private ArrayList<Line> nonMaskedLineDetection(ImageProcessor sourceImageProcessor, ImagePlus imagePlus, ImageProcessor medianImageProcessor, RankFilters rankFilter)
+    {
         ImagePlus varianceImage = new ImagePlus("VarianceImage", medianImageProcessor.convertToColorProcessor());
         rankFilter.rank(varianceImage.getProcessor(), 1, 3);
 
@@ -114,22 +156,27 @@ public class Line_Detection2 implements PlugInFilter {
         return DetectPossibleLines(highlightedLineImage.getProcessor(), (int) Math.round(greenColor));
     }
 
-    private ArrayList<Line> DetectPossibleLines(ImageProcessor ip, int greenColor) {
+    private ArrayList<Line> DetectPossibleLines(ImageProcessor ip, int greenColor)
+    {
         int scanLineStart = ScanLineSpacing / 2;
         ArrayList<Line> foundLines = new ArrayList<>();
 
         // Vertical Search
-        for (int x = scanLineStart; x < ip.getWidth(); x += ScanLineSpacing) {
+        for (int x = scanLineStart; x < ip.getWidth(); x += ScanLineSpacing)
+        {
             boolean greenMode = false;
             boolean lineMode = false;
             boolean lineFinished = false;
             Point lineEntryPoint = null;
 
-            for (int y = 0; y < ip.getHeight(); y++) {
+            for (int y = 0; y < ip.getHeight(); y++)
+            {
                 int px = ip.getPixel(x, y);
 
-                if (px >= greenColor - MaxColorDistance && px <= greenColor + MaxColorDistance) {
-                    if (lineFinished) {
+                if (px >= greenColor - MaxColorDistance && px <= greenColor + MaxColorDistance)
+                {
+                    if (lineFinished)
+                    {
                         Line line = new Line(lineEntryPoint.getX(), lineEntryPoint.getY() + 2, x, y - 2);
                         foundLines.add(line);
                     }
@@ -141,8 +188,10 @@ public class Line_Detection2 implements PlugInFilter {
                     continue;
                 }
 
-                if (px == 255 && greenMode) {
-                    if (lineMode) {
+                if (px == 255 && greenMode)
+                {
+                    if (lineMode)
+                    {
                         lineFinished = true;
                         continue;
                     }
@@ -152,7 +201,8 @@ public class Line_Detection2 implements PlugInFilter {
                     continue;
                 }
 
-                if (greenMode && lineMode && px > greenColor + MaxColorDistance && px < 255) {
+                if (greenMode && lineMode && px > greenColor + MaxColorDistance && px < 255)
+                {
                     continue;
                 }
 
@@ -164,17 +214,21 @@ public class Line_Detection2 implements PlugInFilter {
         }
 
         // Horizontal Search
-        for (int y = scanLineStart; y < ip.getHeight(); y += ScanLineSpacing) {
+        for (int y = scanLineStart; y < ip.getHeight(); y += ScanLineSpacing)
+        {
             boolean greenMode = false;
             boolean lineMode = false;
             boolean lineFinished = false;
             Point lineEntryPoint = null;
 
-            for (int x = 0; x < ip.getWidth(); x++) {
+            for (int x = 0; x < ip.getWidth(); x++)
+            {
                 int px = ip.getPixel(x, y);
 
-                if (px >= greenColor - MaxColorDistance && px <= greenColor + MaxColorDistance) {
-                    if (lineFinished) {
+                if (px >= greenColor - MaxColorDistance && px <= greenColor + MaxColorDistance)
+                {
+                    if (lineFinished)
+                    {
                         IJ.log(String.format("Finished line at %d, %d", x, y));
                         Line line = new Line(lineEntryPoint.getX() + 2, lineEntryPoint.getY(), x - 2, y);
                         foundLines.add(line);
@@ -187,8 +241,10 @@ public class Line_Detection2 implements PlugInFilter {
                     continue;
                 }
 
-                if (px == 255 && greenMode) {
-                    if (lineMode) {
+                if (px == 255 && greenMode)
+                {
+                    if (lineMode)
+                    {
                         lineFinished = true;
                         continue;
                     }
@@ -198,7 +254,8 @@ public class Line_Detection2 implements PlugInFilter {
                     continue;
                 }
 
-                if (greenMode && lineMode && px > greenColor + MaxColorDistance && px < 255) {
+                if (greenMode && lineMode && px > greenColor + MaxColorDistance && px < 255)
+                {
                     continue;
                 }
 
@@ -212,11 +269,13 @@ public class Line_Detection2 implements PlugInFilter {
         return foundLines;
     }
 
-    private Color getMedian(ImageProcessor ip) {
+    private Color getMedian(ImageProcessor ip)
+    {
         return new Color(40, 84, 57);
     }
 
-    private ImagePlus Merge(ImagePlus image1, ImagePlus image2) {
+    private ImagePlus Merge(ImagePlus image1, ImagePlus image2)
+    {
         ImageRoi roi = new ImageRoi(0, 0, image2.getBufferedImage());
         roi.setZeroTransparent(true);
 
