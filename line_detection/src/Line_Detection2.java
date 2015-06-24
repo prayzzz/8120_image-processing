@@ -10,11 +10,13 @@ import ij.plugin.ChannelSplitter;
 import ij.plugin.filter.Binary;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.filter.RankFilters;
-import ij.process.BinaryProcessor;
 import ij.process.ImageProcessor;
 
-import javax.swing.*;
 import java.awt.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -91,7 +93,7 @@ public class Line_Detection2 implements PlugInFilter
             for (Line line : foundLines)
             {
                 IJ.log(Integer.toString(maskProcessor.getPixel(line.x1, line.y1)));
-                if(maskProcessor.getPixel(line.x1, line.y1) == 0 || maskProcessor.getPixel(line.x2, line.y2) == 0 || line.getLength() < 3.0)
+                if (maskProcessor.getPixel(line.x1, line.y1) == 0 || maskProcessor.getPixel(line.x2, line.y2) == 0 || line.getLength() < 3.0)
                 {
                     continue;
                 }
@@ -111,18 +113,26 @@ public class Line_Detection2 implements PlugInFilter
         IJ.log("Found Lines:");
         ImagePlus lineImage = new ImagePlus("Lines", sourceImageProcessor.convertToColorProcessor());
         ImageProcessor lineImageProcessor = lineImage.getProcessor();
-        for (Line l : filteredLines)
+
+        try
         {
-            lineImageProcessor.setColor(Color.RED);
-            lineImageProcessor.drawLine(l.x1, l.y1, l.x2, l.y2);
+            FileWriter file = new FileWriter(new File("result"));
+            BufferedWriter bufferWriter = new BufferedWriter(file);
+
+            for (Line l : filteredLines)
+            {
+                lineImageProcessor.setColor(Color.RED);
+                lineImageProcessor.drawLine(l.x1, l.y1, l.x2, l.y2);
+
+                bufferWriter.write(String.format("%d,%d;%d,%d\n", l.x1, l.y1, l.x2, l.y2));
+            }
+
+            bufferWriter.close();
+        } catch (IOException e)
+        {
+            e.printStackTrace();
         }
-
         lineImage.show();
-    }
-
-    private ArrayList<Line> maskedLineDetection(ImageProcessor sourceImageProcessor, ImageProcessor medianImageProcessor)
-    {
-        return null;
     }
 
     private ArrayList<Line> nonMaskedLineDetection(ImageProcessor sourceImageProcessor, ImagePlus imagePlus, ImageProcessor medianImageProcessor, RankFilters rankFilter)
