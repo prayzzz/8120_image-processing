@@ -28,6 +28,7 @@ public class Line_Detection2 implements PlugInFilter
     private int playGroundHeightPercent = 50;
     private final int MaxColorDistance = 30;
     private final int BrightDistance = 50;
+    private boolean showIntermediateSteps;
 
     @Override
     public int setup(String s, ImagePlus imagePlus)
@@ -43,7 +44,8 @@ public class Line_Detection2 implements PlugInFilter
         gd.addCheckbox("Median Filter", true);
         gd.addNumericField("Scanline Distance", 10.0, 0);
         gd.addCheckbox("Use Field Detection", true);
-        gd.addNumericField("Estimated Playground Height %", 50.0, 0);
+        gd.addNumericField("Estimated Field Height %", 50.0, 0);
+        gd.addCheckbox("Show Intermediate Steps", true);
         gd.showDialog();
         if (gd.wasCanceled())
         {
@@ -58,6 +60,8 @@ public class Line_Detection2 implements PlugInFilter
         boolean fieldDetction = gd.getNextBoolean();
 
         playGroundHeightPercent = (int) Math.round(gd.getNextNumber());
+        
+        showIntermediateSteps = gd.getNextBoolean();
 
         long start = System.currentTimeMillis();
         ImagePlus medianImage = new ImagePlus("Median", sourceImageProcessor.convertToColorProcessor());
@@ -87,8 +91,9 @@ public class Line_Detection2 implements PlugInFilter
 
             binaryPlugin.setup("close", null);
             binaryPlugin.run(maskProcessor);
-
-            mask.show();
+            if(showIntermediateSteps)
+                mask.setTitle("Field Detection");
+                mask.show();
 
             for (Line line : foundLines)
             {
@@ -104,7 +109,14 @@ public class Line_Detection2 implements PlugInFilter
         }
         else
         {
-            filteredLines = foundLines;
+            for (Line line : foundLines)
+            {
+                if (line.getLength() < 3.0)
+                {
+                    continue;
+                }
+                filteredLines.add(line);
+            }
         }
 
         long end = System.currentTimeMillis();
@@ -155,13 +167,12 @@ public class Line_Detection2 implements PlugInFilter
         greenChannelImage.setRoi(0, sourceImageProcessor.getHeight() - (int) Math.round(sourceImageProcessor.getHeight() * (playGroundHeightPercent / 100.0)), sourceImageProcessor.getWidth(), (int) Math.round(sourceImageProcessor.getHeight() * (playGroundHeightPercent / 100.0)));
         double greenColor = greenChannelImage.getStatistics(Measurements.MEDIAN).median;
 
-        IJ.log("Image Median (Green)");
-        IJ.log(Double.toString(greenColor));
+        IJ.log("Image Median (Green)" + greenColor);
 
         ImagePlus highlightedLineImage = Merge(greenChannelImage, skeletonImage);
         highlightedLineImage = new ImagePlus("Highlighted Lines", highlightedLineImage.getProcessor().convertToByteProcessor());
-
-        highlightedLineImage.show();
+        if(showIntermediateSteps)
+            highlightedLineImage.show();
 
         return DetectPossibleLines(highlightedLineImage.getProcessor(), (int) Math.round(greenColor));
     }
