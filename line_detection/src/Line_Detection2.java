@@ -39,8 +39,8 @@ public class Line_Detection2 implements PlugInFilter
     public void run(ImageProcessor sourceImageProcessor)
     {
         GenericDialog gd = new GenericDialog("Line Detection Settings");
-        gd.addCheckbox("Median Filter", true);
         gd.addCheckbox("Maximum Filter", true);
+        gd.addCheckbox("Median Filter", true);
         gd.addNumericField("Scanline Distance", 10.0, 0);
         gd.addCheckbox("Use Field Detection", true);
         gd.addNumericField("Estimated Playground Height %", 50.0, 0);
@@ -66,12 +66,12 @@ public class Line_Detection2 implements PlugInFilter
         RankFilters rankFilter = new RankFilters();
         if (maximum)
         {
-            rankFilter.rank(medianImageProcessor, 2.0, 2);
+            rankFilter.rank(medianImageProcessor, 2.0, RankFilters.MAX);
         }
 
         if (median)
         {
-            rankFilter.rank(medianImageProcessor, 5.0, 4);
+            rankFilter.rank(medianImageProcessor, 5.0, RankFilters.MEDIAN);
         }
 
         ArrayList<Line> foundLines = nonMaskedLineDetection(sourceImageProcessor, ChannelSplitter.split(medianImage)[1], medianImageProcessor, rankFilter);
@@ -108,15 +108,15 @@ public class Line_Detection2 implements PlugInFilter
         }
 
         long end = System.currentTimeMillis();
-        IJ.log("Zeit: " + Long.toString(end - start) + " ms");
+        IJ.log("Time: " + Long.toString(end - start) + " ms");
 
-        IJ.log("Found Lines:");
+        IJ.log("Number of lines: " + filteredLines.size());
         ImagePlus lineImage = new ImagePlus("Lines", sourceImageProcessor.convertToColorProcessor());
         ImageProcessor lineImageProcessor = lineImage.getProcessor();
 
         try
         {
-            FileWriter file = new FileWriter(new File("result"));
+            FileWriter file = new FileWriter(new File("result.txt"));
             BufferedWriter bufferWriter = new BufferedWriter(file);
 
             for (Line l : filteredLines)
