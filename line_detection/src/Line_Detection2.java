@@ -55,7 +55,7 @@ public class Line_Detection2 implements PlugInFilter
         boolean maximum = gd.getNextBoolean();
         boolean median = gd.getNextBoolean();
         ScanLineSpacing = (int) Math.round(gd.getNextNumber());
-        boolean fieldDetction = gd.getNextBoolean();
+        boolean fieldDetection = gd.getNextBoolean();
         playGroundHeightPercent = (int) Math.round(gd.getNextNumber());
 
         long start = System.currentTimeMillis();
@@ -75,7 +75,7 @@ public class Line_Detection2 implements PlugInFilter
 
         ArrayList<Line> foundLines = nonMaskedLineDetection(sourceImageProcessor, ChannelSplitter.split(medianImage)[1], medianImageProcessor, rankFilter);
         ArrayList<Line> filteredLines = new ArrayList<>();
-        if (fieldDetction)
+        if (fieldDetection)
         {
             ImagePlus mask = new Field_Detection().detectField(sourceImageProcessor);
             ImageProcessor maskProcessor = mask.getProcessor();
@@ -103,14 +103,7 @@ public class Line_Detection2 implements PlugInFilter
         }
         else
         {
-            for (Line line : foundLines)
-            {
-                if (line.getLength() < 3.0)
-                {
-                    continue;
-                }
-                filteredLines.add(line);
-            }
+            foundLines.stream().filter(x -> x.getLength() > 3.0).forEach(x -> filteredLines.add(x));
         }
 
         long end = System.currentTimeMillis();
@@ -145,6 +138,8 @@ public class Line_Detection2 implements PlugInFilter
     private ArrayList<Line> nonMaskedLineDetection(ImageProcessor sourceImageProcessor, ImagePlus greenChannelImage, ImageProcessor medianImageProcessor, RankFilters rankFilter)
     {
         ImagePlus lineDectectionImage = new ImagePlus("LineDectectionImage", medianImageProcessor.convertToColorProcessor());
+
+        //Apply variance
         rankFilter.rank(lineDectectionImage.getProcessor(), 1, 3);
 
         Prefs.blackBackground = false;
