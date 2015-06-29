@@ -45,23 +45,18 @@ public class Line_Detection2 implements PlugInFilter
         gd.addNumericField("Scanline Distance", 10.0, 0);
         gd.addCheckbox("Use Field Detection", true);
         gd.addNumericField("Estimated Field Height %", 50.0, 0);
-        gd.addCheckbox("Show Intermediate Steps", true);
         gd.showDialog();
         if (gd.wasCanceled())
         {
             return;
         }
 
+        // Read Dialog
         boolean maximum = gd.getNextBoolean();
         boolean median = gd.getNextBoolean();
-
         ScanLineSpacing = (int) Math.round(gd.getNextNumber());
-
         boolean fieldDetction = gd.getNextBoolean();
-
         playGroundHeightPercent = (int) Math.round(gd.getNextNumber());
-        
-        showIntermediateSteps = gd.getNextBoolean();
 
         long start = System.currentTimeMillis();
         ImagePlus medianImage = new ImagePlus("Median", sourceImageProcessor.convertToColorProcessor());
@@ -91,13 +86,12 @@ public class Line_Detection2 implements PlugInFilter
 
             binaryPlugin.setup("close", null);
             binaryPlugin.run(maskProcessor);
-            if(showIntermediateSteps)
+            if (showIntermediateSteps)
                 mask.setTitle("Field Detection");
-                mask.show();
+            mask.show();
 
             for (Line line : foundLines)
             {
-                IJ.log(Integer.toString(maskProcessor.getPixel(line.x1, line.y1)));
                 if (maskProcessor.getPixel(line.x1, line.y1) == 0 || maskProcessor.getPixel(line.x2, line.y2) == 0 || line.getLength() < 3.0)
                 {
                     continue;
@@ -140,39 +134,33 @@ public class Line_Detection2 implements PlugInFilter
             }
 
             bufferWriter.close();
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             e.printStackTrace();
         }
         lineImage.show();
     }
 
-    private ArrayList<Line> nonMaskedLineDetection(ImageProcessor sourceImageProcessor, ImagePlus imagePlus, ImageProcessor medianImageProcessor, RankFilters rankFilter)
+    private ArrayList<Line> nonMaskedLineDetection(ImageProcessor sourceImageProcessor, ImagePlus greenChannelImage, ImageProcessor medianImageProcessor, RankFilters rankFilter)
     {
-        ImagePlus varianceImage = new ImagePlus("VarianceImage", medianImageProcessor.convertToColorProcessor());
-        rankFilter.rank(varianceImage.getProcessor(), 1, 3);
+        ImagePlus lineDectectionImage = new ImagePlus("LineDectectionImage", medianImageProcessor.convertToColorProcessor());
+        rankFilter.rank(lineDectectionImage.getProcessor(), 1, 3);
 
         Prefs.blackBackground = false;
 
         //Convert to Binary
-        ImagePlus binaryImage = new ImagePlus("Binary", varianceImage.getProcessor().convertToColorProcessor());
-        IJ.runPlugIn(binaryImage, "ij.plugin.Thresholder", "");
+        IJ.runPlugIn(lineDectectionImage, "ij.plugin.Thresholder", "");
 
         // Skeletonize
-        ImagePlus skeletonImage = new ImagePlus("Skeleton", binaryImage.getProcessor().convertToByteProcessor());
-        IJ.runPlugIn(skeletonImage, "ij.plugin.filter.Binary", "skel");
-        skeletonImage.getProcessor().invert();
+        IJ.runPlugIn(lineDectectionImage, "ij.plugin.filter.Binary", "skel");
+        lineDectectionImage.getProcessor().invert();
 
-        ImagePlus greenChannelImage = imagePlus;
         greenChannelImage.setRoi(0, sourceImageProcessor.getHeight() - (int) Math.round(sourceImageProcessor.getHeight() * (playGroundHeightPercent / 100.0)), sourceImageProcessor.getWidth(), (int) Math.round(sourceImageProcessor.getHeight() * (playGroundHeightPercent / 100.0)));
         double greenColor = greenChannelImage.getStatistics(Measurements.MEDIAN).median;
 
-        IJ.log("Image Median (Green)" + greenColor);
-
-        ImagePlus highlightedLineImage = Merge(greenChannelImage, skeletonImage);
+        ImagePlus highlightedLineImage = Merge(greenChannelImage, lineDectectionImage);
         highlightedLineImage = new ImagePlus("Highlighted Lines", highlightedLineImage.getProcessor().convertToByteProcessor());
-        if(showIntermediateSteps)
-            highlightedLineImage.show();
 
         return DetectPossibleLines(highlightedLineImage.getProcessor(), (int) Math.round(greenColor));
     }
@@ -250,7 +238,6 @@ public class Line_Detection2 implements PlugInFilter
                 {
                     if (lineFinished)
                     {
-                        IJ.log(String.format("Finished line at %d, %d", x, y));
                         Line line = new Line(lineEntryPoint.getX() + 2, lineEntryPoint.getY(), x - 2, y);
                         foundLines.add(line);
                     }
